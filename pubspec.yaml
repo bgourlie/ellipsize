@@ -1,6 +1,6 @@
 name: ellipsize
 version: 0.1.0
-author: W. Brian Gourlie
+author: W. Brian Gourlie <bgourlie@gmail.com>
 description: Truncates and adds ellipses to multiline text that overflows its container.
 homepage: https://github.com/bgourlie/ellipsize
 environment:
