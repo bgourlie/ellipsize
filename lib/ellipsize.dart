@@ -49,50 +49,79 @@ void ellipsize(Element el){
     el.insertAdjacentElement('afterEnd', tempElement);
     
     final desiredHeight = el.clientHeight;
-    final allNodes = new List<Node>();
     
-    for(final node in tempElement.nodes){
-      _addAllNodes(node, allNodes);
+    //no truncating required
+    if(tempElement.clientHeight == el.clientHeight) {
+      el.style.border = '3px solid green';
+      return;
     }
-
-    while(tempElement.clientHeight > desiredHeight){
-      for(int i = allNodes.length - 1; i >=0; i--){
-        final curNode = allNodes[i];
+    
+    final elToTruncate = _determineElementToTruncate(tempElement, tempElement.children, desiredHeight);
         
-        if(curNode.text.trim().isEmpty){
-          curNode.remove();
-          continue;
-        }
-        
-        var curText = curNode.text.trim();
-        
-        while(curText.length > 0){                   
-          final nextCutoff = curNode.text.lastIndexOf(' ');
-          
-          if(nextCutoff == -1){
-            curNode.remove();
-            break;
-          }
-          
-          final nextCutoffText = curNode.text.substring(0, nextCutoff);
-          curText = '${nextCutoffText}…';
-          curNode.text = curText;
-          el.innerHtml = tempElement.innerHtml;
-          
-          if(tempElement.clientHeight <= desiredHeight){
-            tempElement.remove();
-            return;
-          }
-        }
+    var curText = elToTruncate.text.trim();
+    
+    while(curText.length > 0){                   
+      final nextCutoff = elToTruncate.text.lastIndexOf(' ');
+      
+      if(nextCutoff == -1){
+        el.remove();
+        return;
+      }
+      
+      final nextCutoffText = elToTruncate.text.substring(0, nextCutoff);
+      curText = '${nextCutoffText}…';
+      elToTruncate.text = curText;
+      el.innerHtml = tempElement.innerHtml;
+      
+      if(tempElement.clientHeight <= desiredHeight){
+        tempElement.remove();
+        return;
       }
     }
+
     tempElement.remove();
   }
 }
 
-void _addAllNodes(Node curNode, List<Node> nodes){
-  nodes.add(curNode);
-  for(final node in curNode.nodes){
-    _addAllNodes(node, nodes);
+/**
+ * Recursively determine the element in which truncating the text will satisfy the parent's size requirement 
+ */
+Element _determineElementToTruncate(Element rootContainer, List<Element> elements, int desiredHeight){
+  final parent = elements[0].parent;
+  for(int i = elements.length - 1; i >= 0; --i){
+    final e = elements[i];
+    e.remove();
+    if(rootContainer.clientHeight <= desiredHeight){
+      parent.children.add(e);
+      
+      if(elements[i].children.length == 0){
+        //there are no child element -- return it so we can start truncating text
+        return e;
+      }else{
+        //the element has child elements -- recurse
+        return _determineElementToTruncate(rootContainer, e.children, desiredHeight);
+      }
+    }
   }
+}
+
+int _binarySearch(int length, int func(int val)){
+  int low = 0;
+  int high = length - 1;
+  int best = -1;
+  int mid;
+  
+  while(low <= high){
+    mid = (low + high) ~/ 2;
+    final result = func(mid);
+    if(result < 0){
+      high = mid - 1;
+    } else if (result > 0){
+      low = mid + 1;
+    }else{
+      best = mid;
+      low = mid + 1;
+    }
+  }
+  return best;
 }
