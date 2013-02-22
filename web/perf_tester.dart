@@ -38,7 +38,7 @@ void run(Event e){
   final stopwatch = new Stopwatch()..start();
   
   for(final container in containers){
-    ellipsize(container);
+    new Ellipsize(container);
     numResized++;
     window.setImmediate(() {
       spnNumResized.text = numResized.toString();
@@ -65,7 +65,7 @@ void generate(Event e){
   }
 
   final rnd = new Random();
-
+  divSubjects.children.clear();
   for(int i = 0; i < numContainers; i++){
     final container = new DivElement();
     container.classes.add('container');

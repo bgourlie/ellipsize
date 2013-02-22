@@ -37,91 +37,105 @@ import 'dart:html';
  *    text-overflow: ellipsis;
  *
  */
-void ellipsize(Element el){  
+class Ellipsize{
   
-  final tempElement = el.clone(true);
-  if(el.getComputedStyle().overflow == 'hidden'){    
-    tempElement.style.position = 'absolute';
-    tempElement.style.overflow = 'visible';
-    tempElement.style.width = '${el.clientWidth}px';
-    tempElement.style.height = 'auto';
-    tempElement.style.maxHeight = 'none';
-    el.insertAdjacentElement('afterEnd', tempElement);
-    
-    final desiredHeight = el.clientHeight;
-    
-    //no truncating required
-    if(tempElement.clientHeight == el.clientHeight) {
-      el.style.border = '3px solid green';
-      return;
-    }
-    
-    final elToTruncate = _determineElementToTruncate(tempElement, tempElement.children, desiredHeight);
-        
-    var curText = elToTruncate.text.trim();
-    
-    while(curText.length > 0){                   
-      final nextCutoff = elToTruncate.text.lastIndexOf(' ');
+  static final trimEnd = new RegExp(r'''(?:[\.!?\s,])*$''', multiLine: true, caseSensitive: false);
+  final Element el;
+  final int desiredHeight;
+  final Element tempElement;
+  
+  Element elemToTruncate;
+  String origText;
+  
+  Ellipsize(Element el) : 
+    this.el = el,
+    desiredHeight = el.clientHeight,
+    tempElement = el.clone(true){
+
+    if(el.getComputedStyle().overflow == 'hidden'){    
+      tempElement.style.position = 'fixed';
+      tempElement.style.visibility = 'hidden';
+      tempElement.style.overflow = 'visible';
+      tempElement.style.width = '${el.clientWidth}px';
+      tempElement.style.height = 'auto';
+      tempElement.style.maxHeight = 'none';
+      el.insertAdjacentElement('afterEnd', tempElement);
       
-      if(nextCutoff == -1){
-        el.remove();
-        return;
-      }
-      
-      final nextCutoffText = elToTruncate.text.substring(0, nextCutoff);
-      curText = '${nextCutoffText}…';
-      elToTruncate.text = curText;
-      el.innerHtml = tempElement.innerHtml;
-      
-      if(tempElement.clientHeight <= desiredHeight){
+      //no truncating required
+      if(tempElement.clientHeight <= desiredHeight) {
         tempElement.remove();
         return;
       }
-    }
-
-    tempElement.remove();
-  }
-}
-
-/**
- * Recursively determine the element in which truncating the text will satisfy the parent's size requirement 
- */
-Element _determineElementToTruncate(Element rootContainer, List<Element> elements, int desiredHeight){
-  final parent = elements[0].parent;
-  for(int i = elements.length - 1; i >= 0; --i){
-    final e = elements[i];
-    e.remove();
-    if(rootContainer.clientHeight <= desiredHeight){
-      parent.children.add(e);
+            
+      elemToTruncate = tempElement.children.length == 0 
+          ? tempElement 
+          : _determineElementToTruncate(tempElement, tempElement.children, desiredHeight);
+          
+      origText = elemToTruncate.text;
+      int len = _binarySearch(origText.length - 1, _truncateText);
       
-      if(elements[i].children.length == 0){
-        //there are no child element -- return it so we can start truncating text
-        return e;
+      if(len == -1){
+        elemToTruncate.remove();
       }else{
-        //the element has child elements -- recurse
-        return _determineElementToTruncate(rootContainer, e.children, desiredHeight);
+        _setEllipsis(len);
+      }
+
+      el.innerHtml = tempElement.innerHtml;
+      tempElement.remove();
+    }
+  }
+  
+  int _truncateText(int i){
+    _setEllipsis(i);
+    return tempElement.clientHeight >  desiredHeight ? -1 : 0;
+  }
+  
+  void _setEllipsis(int i){
+    var newText = origText.substring(0, i).replaceAll(trimEnd, '');
+    final textWithEllipses = '${newText}…';
+    elemToTruncate.text = textWithEllipses;
+  }
+  
+  /**
+   * Recursively determine the element in which truncating the text will satisfy the parent's size requirement 
+   */
+  static Element _determineElementToTruncate(Element rootContainer, List<Element> elements, int desiredHeight){
+    final parent = elements[0].parent;
+    for(int i = elements.length - 1; i >= 0; --i){
+      final e = elements[i];
+      e.remove();
+      if(rootContainer.clientHeight <= desiredHeight){
+        parent.children.add(e);
+        
+        if(elements[i].children.length == 0){
+          //there are no child element -- return it so we can start truncating text
+          return e;
+        }else{
+          //the element has child elements -- recurse
+          return _determineElementToTruncate(rootContainer, e.children, desiredHeight);
+        }
       }
     }
   }
-}
 
-int _binarySearch(int length, int func(int val)){
-  int low = 0;
-  int high = length - 1;
-  int best = -1;
-  int mid;
-  
-  while(low <= high){
-    mid = (low + high) ~/ 2;
-    final result = func(mid);
-    if(result < 0){
-      high = mid - 1;
-    } else if (result > 0){
-      low = mid + 1;
-    }else{
-      best = mid;
-      low = mid + 1;
+  static int _binarySearch(int length, int func(int val)){
+    int low = 0;
+    int high = length - 1;
+    int best = -1;
+    int mid;
+    
+    while(low <= high){
+      mid = (low + high) ~/ 2;
+      final result = func(mid);
+      if(result < 0){
+        high = mid - 1;
+      } else if (result > 0){
+        low = mid + 1;
+      }else{
+        best = mid;
+        low = mid + 1;
+      }
     }
+    return best;
   }
-  return best;
 }
