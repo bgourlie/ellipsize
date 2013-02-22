@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ellipsize performance tester</title>
+    
+  <style media="screen" type="text/css">
+    #control-panel{
+      border-bottom: 3px solid black;
+      margin-bottom: 20px;
+      padding: 10px;
+    }
+    
+    #setup{
+      display: inline-block;
+      width:200px;
+    }
+    
+    #runner{
+      display: inline-block;
+      width: 400px;
+      margin-left: 50px;
+    }
+    
+    .container{
+      display: inline-block;
+      width: 300px;
+      overflow: hidden;
+      margin: 5px;
+      padding: 2px;
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+    <h3>ellipsize performance tester</h3>
+      <div id="control-panel">
+        <div id="setup">
+          <label>Num Elements: <input type="text" id="numElements" /></label>
+          <button id="generate">generate</button>
+        </div>
+        <div id="runner">
+           <button id="run">Run Ellipsizer</button>
+           <p>Num Resized: <span id="numResized"></span></p>
+           <label>Completed in: <input id="elapsedTime" type="text" /></label> 
+         </div>
+      </div>
+      
+    <div id="subjects"></div>
+    
+    <script type="application/dart" src="perf_tester.dart"></script>
+    <script type="text/javascript" src="packages/browser/dart.js"></script>
+</body>
+</html>

@@ -5,6 +5,8 @@ description: Truncates and adds ellipses to multiline text that overflows its co
 homepage: https://github.com/bgourlie/ellipsize
 environment:
   sdk: '>=0.3.7'
+dependencies:
+  browser: any
 
 #dependencies:
 #  js: any
