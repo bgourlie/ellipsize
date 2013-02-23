@@ -53,7 +53,7 @@ class Ellipsize{
     _desiredHeight = el.clientHeight,
     _tempElement = el.clone(true){
 
-    if(el.getComputedStyle().overflow == 'hidden'){    
+    if(el.getComputedStyle().overflow != 'hidden') return;   
       _tempElement.style.position = 'fixed';
       _tempElement.style.visibility = 'hidden';
       _tempElement.style.overflow = 'visible';
@@ -68,7 +68,10 @@ class Ellipsize{
         return;
       }
             
-      _nodeToTruncate = _determineNodeToTruncate(_tempElement, _tempElement.children, _desiredHeight);
+      _nodeToTruncate = _tempElement.children.length == 0 
+          ? _tempElement.nodes[0] 
+          : _determineNodeToTruncate(_tempElement, _tempElement.children, _desiredHeight);
+          
       _origText = _nodeToTruncate.text;
       int len = _binarySearch(_origText.length - 1, _truncateText);
       
@@ -88,13 +91,8 @@ class Ellipsize{
       }else{
         _setEllipsis(len);
       }
-      finish();
-    }
-  }
-  
-  void finish(){
-    _el.innerHtml = _tempElement.innerHtml;
-    _tempElement.remove();
+      _el.innerHtml = _tempElement.innerHtml;
+      _tempElement.remove();
   }
   
   int _truncateText(int i){

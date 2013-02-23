@@ -73,6 +73,12 @@ void generate(Event e){
     container.style.height = '${containerHeight}px';
     final numElements = rnd.nextInt(40) + 10;
     
+    var insertStraightText = rnd.nextInt(6) == 5;
+    if(insertStraightText){
+      container.text = snippets[rnd.nextInt(snippets.length - 1)];
+      divSubjects.children.add(container);
+      continue;
+    }
     for(int y = 0; y < numElements; y++){
       var snippet = snippets[rnd.nextInt(snippets.length - 1)];
       
