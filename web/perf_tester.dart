@@ -71,13 +71,28 @@ void generate(Event e){
     container.classes.add('container');
     final containerHeight = rnd.nextInt(400) + 100;
     container.style.height = '${containerHeight}px';
-    final numParagraphs = rnd.nextInt(40) + 10;
+    final numElements = rnd.nextInt(40) + 10;
     
-    for(int y = 0; y < numParagraphs; y++){
-        final el = new ParagraphElement();
-        final snippet = snippets[rnd.nextInt(snippets.length - 1)];
-        el.text = snippet;
-        container.children.add(el);
+    for(int y = 0; y < numElements; y++){
+      var snippet = snippets[rnd.nextInt(snippets.length - 1)];
+      
+      var makeList = rnd.nextInt(6) == 5;
+      if(makeList){
+        var lst = new UListElement();
+        
+        for(var sentence in snippet.split('\.')){
+          if(sentence.trim().isEmpty) continue;
+          var li = new LIElement();
+          li.text = sentence;
+          lst.children.add(li);
+        }
+        container.children.add(lst);
+        continue;
+      }
+
+      final el = new ParagraphElement();
+      el.text = snippet;
+      container.children.add(el);
     }
     
     divSubjects.children.add(container);
