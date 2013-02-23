@@ -39,80 +39,102 @@ import 'dart:html';
  */
 class Ellipsize{
   
-  static final trimEnd = new RegExp(r'''(?:[\.!?\s,])*$''', multiLine: true, caseSensitive: false);
-  final Element el;
-  final int desiredHeight;
-  final Element tempElement;
+  static final _trimEnd = new RegExp(r'''(?:[\.!?\s,])*$''', multiLine: true, caseSensitive: false);
   
-  Element elemToTruncate;
-  String origText;
+  final Element _el;
+  final int _desiredHeight;
+  final Element _tempElement;
+  
+  Node _nodeToTruncate;
+  String _origText;
   
   Ellipsize(Element el) : 
-    this.el = el,
-    desiredHeight = el.clientHeight,
-    tempElement = el.clone(true){
+    this._el = el,
+    _desiredHeight = el.clientHeight,
+    _tempElement = el.clone(true){
 
     if(el.getComputedStyle().overflow == 'hidden'){    
-      tempElement.style.position = 'fixed';
-      tempElement.style.visibility = 'hidden';
-      tempElement.style.overflow = 'visible';
-      tempElement.style.width = '${el.clientWidth}px';
-      tempElement.style.height = 'auto';
-      tempElement.style.maxHeight = 'none';
-      el.insertAdjacentElement('afterEnd', tempElement);
+      _tempElement.style.position = 'fixed';
+      _tempElement.style.visibility = 'hidden';
+      _tempElement.style.overflow = 'visible';
+      _tempElement.style.width = '${el.clientWidth}px';
+      _tempElement.style.height = 'auto';
+      _tempElement.style.maxHeight = 'none';
+      el.insertAdjacentElement('afterEnd', _tempElement);
       
       //no truncating required
-      if(tempElement.clientHeight <= desiredHeight) {
-        tempElement.remove();
+      if(_tempElement.clientHeight <= _desiredHeight) {
+        _tempElement.remove();
         return;
       }
             
-      elemToTruncate = tempElement.children.length == 0 
-          ? tempElement 
-          : _determineElementToTruncate(tempElement, tempElement.children, desiredHeight);
-          
-      origText = elemToTruncate.text;
-      int len = _binarySearch(origText.length - 1, _truncateText);
+      _nodeToTruncate = _determineNodeToTruncate(_tempElement, _tempElement.children, _desiredHeight);
+      
+      _origText = _nodeToTruncate.text;
+      int len = _binarySearch(_origText.length - 1, _truncateText);
       
       if(len == -1){
-        elemToTruncate.remove();
+        var parent = _nodeToTruncate.parent;
+        _nodeToTruncate.remove();
+        if(parent.children.length == 0 && parent.text.trim().isEmpty){
+          //the element is empty.  append the ellipses to the previous node's
+          //text
+          var index = parent.parent.children.indexOf(parent);
+          if(index > 0){
+            var prevSibling = parent.parent.children[index - 1];
+            prevSibling.text = '${prevSibling.text.replaceAll(_trimEnd, '')}…'; 
+            parent.remove();
+          }
+        }
       }else{
         _setEllipsis(len);
       }
-
-      el.innerHtml = tempElement.innerHtml;
-      tempElement.remove();
+      finish();
     }
+  }
+  
+  void finish(){
+    _el.innerHtml = _tempElement.innerHtml;
+    _tempElement.remove();
   }
   
   int _truncateText(int i){
     _setEllipsis(i);
-    return tempElement.clientHeight >  desiredHeight ? -1 : 0;
+    return _tempElement.clientHeight >  _desiredHeight ? -1 : 0;
   }
   
   void _setEllipsis(int i){
-    var newText = origText.substring(0, i).replaceAll(trimEnd, '');
+    var newText = _origText.substring(0, i).replaceAll(_trimEnd, '');
     final textWithEllipses = '${newText}…';
-    elemToTruncate.text = textWithEllipses;
+    _nodeToTruncate.text = textWithEllipses;
   }
   
   /**
    * Recursively determine the element in which truncating the text will satisfy the parent's size requirement 
    */
-  static Element _determineElementToTruncate(Element rootContainer, List<Element> elements, int desiredHeight){
-    final parent = elements[0].parent;
-    for(int i = elements.length - 1; i >= 0; --i){
-      final e = elements[i];
-      e.remove();
+  static Node _determineNodeToTruncate(Element rootContainer, List<Node> nodes, int desiredHeight){
+    final parent = nodes[0].parent;
+    for(int i = nodes.length - 1; i >= 0; --i){
+      final curNode = nodes[i];
+      curNode.remove();
       if(rootContainer.clientHeight <= desiredHeight){
-        parent.children.add(e);
+        parent.nodes.add(curNode);
         
-        if(elements[i].children.length == 0){
-          //there are no child element -- return it so we can start truncating text
-          return e;
+        //if it's an element with only a text node, return the text node
+        if(curNode.nodeType == 1 && curNode.nodes.length == 1 
+            && curNode.nodes[0].nodeType == 3){
+          return curNode.nodes[0];
+        }
+        
+        if(curNode.nodeType == 3){
+          //it is a text element -- return it so we can start truncating text
+          return curNode;
         }else{
+          //the curNode is not a text node but removing it satisfies the size 
+          //requirement -- return it
+          if(curNode.nodes.length == 0) return curNode;
           //the element has child elements -- recurse
-          return _determineElementToTruncate(rootContainer, e.children, desiredHeight);
+          return _determineNodeToTruncate(rootContainer, curNode.nodes, desiredHeight);
         }
       }
     }
