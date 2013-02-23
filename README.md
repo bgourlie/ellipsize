@@ -12,6 +12,6 @@ import 'package:ellipsize/ellipsize.dart';
 
 main() {
   var container = query("#hasLotsOfText");
-  ellipsize(container);
+  new Ellipsize(container);
 }
 ```
