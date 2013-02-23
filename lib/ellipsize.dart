@@ -69,7 +69,6 @@ class Ellipsize{
       }
             
       _nodeToTruncate = _determineNodeToTruncate(_tempElement, _tempElement.children, _desiredHeight);
-      
       _origText = _nodeToTruncate.text;
       int len = _binarySearch(_origText.length - 1, _truncateText);
       
@@ -80,8 +79,8 @@ class Ellipsize{
           //the element is empty.  append the ellipses to the previous node's
           //text
           var index = parent.parent.children.indexOf(parent);
-          if(index > 0){
-            var prevSibling = parent.parent.children[index - 1];
+          if(parent.previousElementSibling != null){
+            var prevSibling = parent.previousElementSibling;
             prevSibling.text = '${prevSibling.text.replaceAll(_trimEnd, '')}…'; 
             parent.remove();
           }
@@ -110,15 +109,21 @@ class Ellipsize{
   }
   
   /**
-   * Recursively determine the element in which truncating the text will satisfy the parent's size requirement 
+   * Recursively determine the element in which truncating the text will 
+   * satisfy the parent's size requirement 
    */
   static Node _determineNodeToTruncate(Element rootContainer, List<Node> nodes, int desiredHeight){
     final parent = nodes[0].parent;
     for(int i = nodes.length - 1; i >= 0; --i){
       final curNode = nodes[i];
       curNode.remove();
-      if(rootContainer.clientHeight <= desiredHeight){
-        parent.nodes.add(curNode);
+      //it's an empty node (<br> for example), continue
+      if(curNode.text.trim().isEmpty || (curNode.nodeType == 1 
+          && curNode.nodes.length == 0)) continue;
+      
+      if(rootContainer.clientHeight <= desiredHeight){    
+                
+        parent.nodes.add(curNode);    
         
         //if it's an element with only a text node, return the text node
         if(curNode.nodeType == 1 && curNode.nodes.length == 1 
@@ -130,9 +135,6 @@ class Ellipsize{
           //it is a text element -- return it so we can start truncating text
           return curNode;
         }else{
-          //the curNode is not a text node but removing it satisfies the size 
-          //requirement -- return it
-          if(curNode.nodes.length == 0) return curNode;
           //the element has child elements -- recurse
           return _determineNodeToTruncate(rootContainer, curNode.nodes, desiredHeight);
         }

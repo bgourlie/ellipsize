@@ -89,7 +89,13 @@ void generate(Event e){
         container.children.add(lst);
         continue;
       }
-
+      
+      var addBr = rnd.nextInt(6) == 5;
+      if(addBr){
+        container.children.add(new Element.html('<br>'));
+        continue;
+      }
+      
       final el = new ParagraphElement();
       el.text = snippet;
       container.children.add(el);
