@@ -78,7 +78,7 @@ class Ellipsize{
       if(len == -1){
         var parent = _nodeToTruncate.parent;
         _nodeToTruncate.remove();
-        if(parent.children.length == 0 && parent.text.trim().isEmpty){
+        if(parent != null && parent.children.length == 0 && parent.text.trim().isEmpty){
           //the element is empty.  append the ellipses to the previous node's
           //text
           var index = parent.parent.children.indexOf(parent);
