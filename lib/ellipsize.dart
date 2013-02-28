@@ -71,7 +71,14 @@ class Ellipsize{
       _nodeToTruncate = _tempElement.children.length == 0 
           ? _tempElement.nodes[0] 
           : _determineNodeToTruncate(_tempElement, _tempElement.children, _desiredHeight);
-          
+      
+      if(_nodeToTruncate == null){
+        //Bail out, we couldn't figure it out.  Fail.
+        print('Ellipsizer: Unable to determine which node to truncate.');
+        _tempElement.remove();
+        return;
+      }
+               
       _origText = _nodeToTruncate.text;
       int len = _binarySearch(_origText.length - 1, _truncateText);
       
